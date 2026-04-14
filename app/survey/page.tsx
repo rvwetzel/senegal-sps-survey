@@ -6,13 +6,33 @@ import SurveyCard from '../components/SurveyCard';
 import ProgressHeader from '../components/ProgressHeader';
 import { senegalDecisionTree, domainColors } from '../data/senegalDecisionTree';
 
+const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxKn7RE0h4b1cj-YTM7iShdGx3R-_4jJjaoTLRvAvGzReiG9jFnsQE9ou9EgMxVXIgf/exec';
+
 export default function SurveyPage() {
   const [nodeId, setNodeId] = useState('Q1');
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [history, setHistory] = useState<string[]>([]);
   const [completed, setCompleted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(false);
 
   const node = senegalDecisionTree[nodeId];
+
+  async function submitToGoogleSheets(allAnswers: Record<string, string>) {
+    setSubmitting(true);
+    setSubmitError(false);
+    try {
+      await fetch(GOOGLE_SHEETS_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(allAnswers),
+      });
+    } catch {
+      setSubmitError(true);
+    }
+    setSubmitting(false);
+  }
 
   function handleAnswer(value: string) {
     const next = node.next(value, answers);
@@ -23,6 +43,7 @@ export default function SurveyPage() {
     if (next && senegalDecisionTree[next]) {
       setNodeId(next);
     } else {
+      submitToGoogleSheets(newAnswers);
       setCompleted(true);
     }
   }
@@ -49,6 +70,14 @@ export default function SurveyPage() {
           <h2 className="text-2xl font-bold text-[#0D1B2A] mb-3">
             Thank You for Your Responses
           </h2>
+          {submitting && (
+            <p className="text-[#1E88E5] mb-4">Submitting your responses...</p>
+          )}
+          {submitError && (
+            <p className="text-[#C62828] mb-4 text-sm">
+              There was an issue saving your responses. Please contact the survey administrator.
+            </p>
+          )}
           <p className="text-[#546E7A] mb-6 max-w-md mx-auto">
             Your input will help identify practical opportunities for SPS
             cooperation between Senegal and the United States. NASDA will
