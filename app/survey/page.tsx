@@ -34,9 +34,12 @@ export default function SurveyPage() {
     setSubmitting(false);
   }
 
-  function handleAnswer(value: string) {
+  function handleAnswer(value: string, notes?: string) {
     const next = node.next(value, answers);
     const newAnswers = { ...answers, [nodeId]: value };
+    if (notes) {
+      newAnswers[`${nodeId}_notes`] = notes;
+    }
     setAnswers(newAnswers);
     setHistory([...history, nodeId]);
 
@@ -54,6 +57,7 @@ export default function SurveyPage() {
       setHistory(history.slice(0, -1));
       const newAnswers = { ...answers };
       delete newAnswers[nodeId];
+      delete newAnswers[`${nodeId}_notes`];
       setAnswers(newAnswers);
       setNodeId(prev);
       setCompleted(false);
@@ -90,13 +94,20 @@ export default function SurveyPage() {
               Your Responses
             </h3>
             <div className="space-y-3">
-              {Object.entries(answers).map(([qId, answer]) => {
+              {Object.entries(answers)
+                .filter(([qId]) => !qId.endsWith('_notes'))
+                .map(([qId, answer]) => {
                 const q = senegalDecisionTree[qId];
+                const noteKey = `${qId}_notes`;
+                const note = answers[noteKey];
                 return (
                   <div key={qId} className="border-b border-gray-200 pb-2 last:border-0">
                     <p className="text-xs text-[#78909C] font-medium">{qId} &middot; {q.domain}</p>
                     <p className="text-sm text-[#0D1B2A] font-medium">{q.question.substring(0, 80)}...</p>
                     <p className="text-sm text-[#1E88E5]">{answer}</p>
+                    {note && (
+                      <p className="text-sm text-[#546E7A] italic mt-1">Note: {note}</p>
+                    )}
                   </div>
                 );
               })}
@@ -144,7 +155,7 @@ export default function SurveyPage() {
         currentQuestion={questionNumber}
         totalEstimate="6-10 questions"
         time="4 minutes"
-        questionsAnswered={Object.keys(answers).length}
+        questionsAnswered={Object.keys(answers).filter(k => !k.endsWith('_notes')).length}
       />
 
       <SurveyCard

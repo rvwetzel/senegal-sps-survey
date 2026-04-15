@@ -5,7 +5,7 @@ import { useState } from 'react';
 interface SurveyCardProps {
   question: string;
   options: string[];
-  onAnswer: (value: string) => void;
+  onAnswer: (value: string, notes?: string) => void;
   helperText?: string;
   domain: string;
   domainColor: string;
@@ -22,15 +22,19 @@ export default function SurveyCard({
   isLastQuestion,
 }: SurveyCardProps) {
   const [freeText, setFreeText] = useState('');
+  const [notes, setNotes] = useState('');
   const [selected, setSelected] = useState<string | null>(null);
 
   function handleSelect(opt: string) {
     if (isLastQuestion) return;
     setSelected(opt);
-    setTimeout(() => {
-      onAnswer(opt);
-      setSelected(null);
-    }, 300);
+  }
+
+  function handleContinue() {
+    if (!selected) return;
+    onAnswer(selected, notes.trim() || undefined);
+    setSelected(null);
+    setNotes('');
   }
 
   return (
@@ -87,6 +91,25 @@ export default function SurveyCard({
                 {opt}
               </button>
             ))}
+
+            {/* Optional notes text box - appears after selecting an option */}
+            {selected && (
+              <div className="mt-4 space-y-3">
+                <textarea
+                  className="w-full border border-gray-200 rounded-lg p-4 text-sm text-[#0D1B2A] focus:outline-none focus:ring-2 focus:ring-[#1E88E5] focus:border-transparent resize-none"
+                  rows={3}
+                  placeholder="Additional comments (optional)"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                />
+                <button
+                  onClick={handleContinue}
+                  className="bg-[#1E88E5] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#1565C0] transition-colors shadow-sm"
+                >
+                  Continue
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
